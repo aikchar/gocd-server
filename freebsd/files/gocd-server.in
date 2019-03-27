@@ -1,0 +1,127 @@
+#!/bin/sh
+
+# $FreeBSD$
+#
+# PROVIDE: gocd
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+#
+# Configuration settings for gocd in /etc/rc.conf:
+#
+# gocd_server_enable (bool):
+#   Set to "NO" by default.
+#   Set it to "YES" to enable gocd
+#
+# gocd_server_config_dir (str)
+#   Set to "%%GOCD_SERVER_CONFIG_DIR%%" by default.
+#   Path where config files are stored.
+#
+# gocd_server_java_home (str):
+#   Set to "%%JAVA_HOME%%" by default.
+#   Set the Java virtual machine to run gocd
+#
+# gocd_server_java_opts (str):
+#   Set to "" by default.
+#   Java VM args to use.
+#
+# gocd_server_user (str):
+#   Set to "%%GOCD_SERVER_USER%%" by default.
+#   User to run gocd as.
+#
+# gocd_server_group (str):
+#   Set to "%%GOCD_SERVER_GROUP%%" by default.
+#   Group for data file ownership.
+#
+# gocd_server_log_file (str):
+#   Set to "%%GOCD_LOG_FILE%%" by default.
+#   Log file location.
+#
+# gocd_server_memory (str):
+#   Set to "%%GOCD_SERVER_MEM%%" by default.
+#   Minimal memory to reserve.
+#
+# gocd_server_max_memory (str):
+#   Set to "%%GOCD_SERVER_MAX_MEM%%" by default.
+#   Maximum memory to use.
+#
+# gocd_server_max_metaspace (str):
+#   Set to "%%GOCD_SERVER_MAX_METASPACE%%" by default.
+#   Maximum memory for Java's Metaspace.
+#
+# gocd_server_port (str):
+#   Set to "%%GOCD_SERVER_PORT%%" by default.
+#   Port to use.
+#
+# gocd_server_ssl_port (str):
+#   Set to "%%GOCD_SERVER_SSL_PORT%%" by default.
+#   SSL/TLS port to use.
+#
+# gocd_server_user_lang (str):
+#   Set to "%%GOCD_SERVER_USER_LANG%%" by default.
+#   User language.
+#
+# gocd_server_user_country (str):
+#   Set to "%%GOCD_SERVER_USER_COUNTRY%%" by default.
+#   User country.
+#
+# gocd_server_listen_host (str):
+#   Set to "%%GOCD_SERVER_LISTEN_HOST%%" by default.
+#   Host address which GoCD server should bind to.
+#
+
+. /etc/rc.subr
+
+name=gocd
+desc="GoCD Continuous Integration and Continuous Delivery system"
+rcvar=gocd_server_enable
+
+load_rc_config "${name}"
+
+: ${gocd_server_enable:=NO}
+: ${gocd_server_config_dir="%%GOCD_SERVER_CONFIG_DIR%%"}
+: ${gocd_server_java_home="%%JAVA_HOME%%"}
+: ${gocd_server_user="%%GOCD_SERVER_USER%%"}
+: ${gocd_server_group="%%GOCD_SERVER_GROUP%%"}
+: ${gocd_server_log_file="%%GOCD_LOG_FILE%%"}
+: ${gocd_server_memory="%%GOCD_SERVER_MEM%%"}
+: ${gocd_server_max_memory="%%GOCD_SERVER_MAX_MEM%%"}
+: ${gocd_server_max_metaspace="%%GOCD_SERVER_MAX_METASPACE%%"}
+: ${gocd_server_port="%%GOCD_SERVER_PORT%%"}
+: ${gocd_server_ssl_port="%%GOCD_SERVER_SSL_PORT%%"}
+: ${gocd_server_user_lang="%%GOCD_SERVER_USER_LANG%%"}
+: ${gocd_server_user_country="%%GOCD_SERVER_USER_COUNTRY%%"}
+: ${gocd_server_listen_host="%%GOCD_SERVER_LISTEN_HOST%%"}
+
+: ${gocd_server_args="-server -Djava.io.tmpdir=$TMPDIR -Djava.security.egd=file:/dev/./urandom -Xms${gocd_server_memory} -Xmx${gocd_server_max_memory} -XX:MaxMetaspaceSize=${gocd_server_max_metaspace} -Duser.language=${gocd_server_user_lang} -Djruby.rack.request.size.threshold.bytes=30000000 -Duser.country=${gocd_server_user_country} -Dcruise.config.dir=${gocd_server_config_dir} -Dcruise.config.file=${gocd_server_config_dir}/cruise-config.xml -Dcruise.server.port=${gocd_server_port} -Dcruise.server.ssl.port=${gocd_server_ssl_port}"}
+if [ ! -z "${gocd_server_listen_host}" ]; then
+    gocd_server_args="${gocd_server_args} -Dcruise.listen.host=${gocd_server_listen_host}"
+fi
+
+pidfile=/var/run/gocd-server/gocd.pid
+command=/usr/sbin/daemon
+java_cmd="${gocd_server_java_home}/bin/java"
+procname="${java_cmd}"
+command_args="-p ${pidfile} ${java_cmd} ${gocd_server_java_opts} ${gocd_server_args} -jar %%JAVAJARDIR%%/go.jar >> ${gocd_server_log_file} 2>&1"
+required_files="${java_cmd}"
+
+start_precmd=gocd_server_prestart
+start_cmd=gocd_server_start
+
+gocd_server_prestart()
+{
+	if [ ! -f "${gocd_server_log_file}" ]; then
+		install -o "${gocd_server_user}" -g "${gocd_server_group}" -m 640 /dev/null "${gocd_server_log_file}"
+	fi
+	if [ ! -d "/var/run/gocd-server" ]; then
+		install -d -o "${gocd_server_user}" -g "${gocd_server_group}" -m 750 "/var/run/gocd-server"
+	fi
+}
+
+gocd_server_start()
+{
+	check_startmsgs && echo "Starting ${name}."
+	su -l "${gocd_server_user}" -c "exec ${command} ${command_args} ${rc_arg}"
+}
+
+run_rc_command "$1"

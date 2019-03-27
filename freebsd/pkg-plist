@@ -1,0 +1,2 @@
+%%DATADIR%%/go.jar
+@dir(%%GOCD_SERVER_USER%%,%%GOCD_SERVER_GROUP%%,) gocd-server
