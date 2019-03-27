@@ -2,12 +2,12 @@
 
 # $FreeBSD$
 #
-# PROVIDE: gocd
+# PROVIDE: gocd-server
 # REQUIRE: LOGIN
 # KEYWORD: shutdown
 
 #
-# Configuration settings for gocd in /etc/rc.conf:
+# Configuration settings for gocd-server in /etc/rc.conf:
 #
 # gocd_server_enable (bool):
 #   Set to "NO" by default.
@@ -72,7 +72,7 @@
 
 . /etc/rc.subr
 
-name=gocd
+name=gocd-server
 desc="GoCD Continuous Integration and Continuous Delivery system"
 rcvar=gocd_server_enable
 
