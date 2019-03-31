@@ -2,12 +2,12 @@
 
 # $FreeBSD$
 #
-# PROVIDE: gocd-server
+# PROVIDE: gocdserver
 # REQUIRE: LOGIN
 # KEYWORD: shutdown
 
 #
-# Configuration settings for gocd-server in /etc/rc.conf:
+# Configuration settings for gocdserver in /etc/rc.conf:
 #
 # gocd_server_enable (bool):
 #   Set to "NO" by default.
@@ -34,7 +34,7 @@
 #   Group for data file ownership.
 #
 # gocd_server_log_file (str):
-#   Set to "%%GOCD_LOG_FILE%%" by default.
+#   Set to "%%GOCD_SERVER_LOG_FILE%%" by default.
 #   Log file location.
 #
 # gocd_server_memory (str):
@@ -72,7 +72,7 @@
 
 . /etc/rc.subr
 
-name=gocd-server
+name=gocdserver
 desc="GoCD Continuous Integration and Continuous Delivery system"
 rcvar=gocd_server_enable
 
@@ -83,7 +83,7 @@ load_rc_config "${name}"
 : ${gocd_server_java_home="%%JAVA_HOME%%"}
 : ${gocd_server_user="%%GOCD_SERVER_USER%%"}
 : ${gocd_server_group="%%GOCD_SERVER_GROUP%%"}
-: ${gocd_server_log_file="%%GOCD_LOG_FILE%%"}
+: ${gocd_server_log_file="%%GOCD_SERVER_LOG_FILE%%"}
 : ${gocd_server_memory="%%GOCD_SERVER_MEM%%"}
 : ${gocd_server_max_memory="%%GOCD_SERVER_MAX_MEM%%"}
 : ${gocd_server_max_metaspace="%%GOCD_SERVER_MAX_METASPACE%%"}
@@ -93,7 +93,7 @@ load_rc_config "${name}"
 : ${gocd_server_user_country="%%GOCD_SERVER_USER_COUNTRY%%"}
 : ${gocd_server_listen_host="%%GOCD_SERVER_LISTEN_HOST%%"}
 
-: ${gocd_server_args="-server -Djava.io.tmpdir=$TMPDIR -Djava.security.egd=file:/dev/./urandom -Xms${gocd_server_memory} -Xmx${gocd_server_max_memory} -XX:MaxMetaspaceSize=${gocd_server_max_metaspace} -Duser.language=${gocd_server_user_lang} -Djruby.rack.request.size.threshold.bytes=30000000 -Duser.country=${gocd_server_user_country} -Dcruise.config.dir=${gocd_server_config_dir} -Dcruise.config.file=${gocd_server_config_dir}/cruise-config.xml -Dcruise.server.port=${gocd_server_port} -Dcruise.server.ssl.port=${gocd_server_ssl_port}"}
+: ${gocd_server_args="-server -Dgocd.redirect.stdout.to.file=${gocd_server_log_file} -Djava.io.tmpdir=%%TMPDIR%% -Djava.security.egd=file:/dev/./urandom -Xms${gocd_server_memory} -Xmx${gocd_server_max_memory} -XX:MaxMetaspaceSize=${gocd_server_max_metaspace} -Duser.language=${gocd_server_user_lang} -Djruby.rack.request.size.threshold.bytes=30000000 -Duser.country=${gocd_server_user_country} -Dcruise.config.dir=${gocd_server_config_dir} -Dcruise.config.file=${gocd_server_config_dir}/cruise-config.xml -Dcruise.server.port=${gocd_server_port} -Dcruise.server.ssl.port=${gocd_server_ssl_port}"}
 if [ ! -z "${gocd_server_listen_host}" ]; then
     gocd_server_args="${gocd_server_args} -Dcruise.listen.host=${gocd_server_listen_host}"
 fi
@@ -102,7 +102,7 @@ pidfile=/var/run/gocd-server/gocd.pid
 command=/usr/sbin/daemon
 java_cmd="${gocd_server_java_home}/bin/java"
 procname="${java_cmd}"
-command_args="-p ${pidfile} ${java_cmd} ${gocd_server_java_opts} ${gocd_server_args} -jar %%JAVAJARDIR%%/go.jar >> ${gocd_server_log_file} 2>&1"
+command_args="-p ${pidfile} ${java_cmd} ${gocd_server_java_opts} -jar %%JAVAJARDIR%%/go.jar ${gocd_server_args} >> ${gocd_server_log_file} 2>&1"
 required_files="${java_cmd}"
 
 start_precmd=gocd_server_prestart
